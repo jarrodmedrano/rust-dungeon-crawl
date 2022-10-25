@@ -1,6 +1,6 @@
-use crate::{SCREEN_HEIGHT, SCREEN_WIDTH};
 use crate::prelude::*;
 const NUM_TILES: usize = (SCREEN_WIDTH * SCREEN_HEIGHT) as usize;
+
 
 #[derive(Copy, Clone, PartialEq)]
 pub enum TileType {
@@ -59,7 +59,7 @@ impl Map {
         }
     }
 
-    pub fn render(&self, ctx: &mut Bterm, camera: &Camera) {
+    pub fn render(&self, ctx: &mut BTerm, camera: &Camera) {
         ctx.set_active_console(0);
         for y in camera.top_y .. camera.bottom_y {
             for x in camera.left_x .. camera.right_x {

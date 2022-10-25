@@ -2,6 +2,7 @@
 
 mod map;
 mod player;
+mod map_builder;
 
 mod prelude {
     pub use bracket_lib::prelude::*;

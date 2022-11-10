@@ -2,8 +2,10 @@
 
 mod map;
 mod map_builder;
-mod player;
 mod camera;
+mod spawner;
+mod components;
+mod systems;
 
 mod prelude {
     pub use bracket_lib::prelude::*;
@@ -15,27 +17,35 @@ mod prelude {
     pub use legion::*;
     pub use legion::world::SubWorld;
     pub use legion::systems::CommandBuffer;
-    pub use crate::player::*;
     pub use crate::map_builder::*;
     pub use crate::camera::*;
+    pub use crate::components::*;
+    pub use crate::spawner::*;
 }
 
 use prelude::*;
+use crate::systems::build_scheduler;
 
 struct State {
-    map: Map,
-    player: Player,
-    camera: Camera
+    ecs : World,
+    resources: Resources,
+    systems: Schedule,
 }
 
 impl State {
     fn new() -> Self {
+        let mut ecs = World::default();
+        let mut resources = Resources::default();
         let mut rng = RandomNumberGenerator::new();
         let map_builder = MapBuilder::new(&mut rng);
+        // add player and its components to ECS
+        spawn_player(&mut ecs, map_builder.player_start);
+        resources.insert(map_builder.map);
+        resources.insert(Camera::new(map_builder.player_start));
         Self {
-            map : map_builder.map,
-            player: Player::new(map_builder.player_start),
-            camera: Camera::new(map_builder.player_start)
+            ecs,
+            resources,
+            systems: build_scheduler()
         }
     }
 }
@@ -46,9 +56,10 @@ impl GameState for State {
         ctx.cls();
         ctx.set_active_console(1);
         ctx.cls();
-        self.player.update(ctx, &self.map, &mut self.camera);
-        self.map.render(ctx, &self.camera);
-        self.player.render(ctx, &self.camera);
+        // makes keyboard available6
+        self.resources.insert(ctx.key);
+        self.systems.execute(&mut self.ecs,&mut self.resources);
+        render_draw_buffer(ctx).expect("Render error");
     }
 }
 

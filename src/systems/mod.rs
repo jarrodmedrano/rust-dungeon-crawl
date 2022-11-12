@@ -14,5 +14,6 @@ pub fn build_scheduler() -> Schedule {
         .flush()
         .add_system(map_render::map_render_system())
         .add_system(entity_render::entity_render_system())
+        .add_system(random_move::random_move_system())
         .build()
 }

@@ -3,7 +3,6 @@ use crate::prelude::*;
 #[system]
 #[write_component(Point)]
 #[read_component(MovingRandomly)]
-// obtain read only access to the Map resource
 pub fn random_move(ecs: &mut SubWorld, #[resource] map: &Map) {
     // creates a new Query with writeable access to Point and read-only access to MovingRandomly
     let mut movers = <(&mut Point, &MovingRandomly)>::query();

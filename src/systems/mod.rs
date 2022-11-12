@@ -4,7 +4,7 @@ mod map_render;
 mod entity_render;
 mod player_input;
 mod collisions;
-mod randome_move;
+mod random_move;
 
 pub fn build_scheduler() -> Schedule {
     Schedule::builder()

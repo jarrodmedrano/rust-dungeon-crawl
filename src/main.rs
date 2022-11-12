@@ -38,6 +38,15 @@ impl State {
         let mut resources = Resources::default();
         let mut rng = RandomNumberGenerator::new();
         let map_builder = MapBuilder::new(&mut rng);
+        // skip player's first room when adding a monster
+        map_builder.rooms
+            .iter()
+            .skip(1)
+            // mapping an iterator passes each entry into a closure (returning a different type of result)
+            // transforms one type of iterator into another
+            .map(|r| r.center())
+            // closure on each location
+            .for_each(|pos| spawn_monster(&mut ecs, &mut rng, pos));
         // add player and its components to ECS
         spawn_player(&mut ecs, map_builder.player_start);
         resources.insert(map_builder.map);

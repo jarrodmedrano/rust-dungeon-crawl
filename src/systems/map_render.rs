@@ -17,14 +17,14 @@ pub fn map_render(#[resource] map: &Map, #[resource] camera: &Camera) {
                     TileType::Wall => to_cp437('#'),
                 };
                 // call the batch rather than the context
-                draw_batch.set(
-                    pt - offset,
-                    ColorPair::new(
-                        WHITE,
-                        BLACK
-                    ),
-                    glyph
-                )
+                draw_batch.set(// <callout id="co.ecs.map_render.set" />
+                               pt - offset,
+                               ColorPair::new(
+                                   WHITE,
+                                   BLACK
+                               ),
+                               glyph
+                );
             }
         }
     }

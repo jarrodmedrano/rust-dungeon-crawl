@@ -2,6 +2,11 @@ pub use crate::prelude::*;
 
 // deeriving clone so we can clone it and debug so we can debug it
 #[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Health {
+    pub current: i32,
+    pub max: i32
+}
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Render {
     //color pair is a background and foreground color
     pub color : ColorPair,

@@ -24,21 +24,34 @@ pub fn spawn_monster(
     rng: &mut RandomNumberGenerator,
     pos : Point
 ) {
+    let (hp, name, glyph) = match rng.roll_dice(1, 10) {
+        //  Match can only match on inclusive ranges, requiring the equals, (..=), symbol.
+        1..=8 => goblin(),
+        _ => orc()
+    };
+
     ecs.push(
         (Enemy,
             //Start; spawn_monster
          pos,
          Render {
              color: ColorPair::new(WHITE, BLACK),
-             glyph: match rng.range(0, 4) {
-                 0 => to_cp437('E'),
-                 1 => to_cp437('O'),
-                 2 => to_cp437('o'),
-                 _ => to_cp437('g'),
-             }
+             glyph,
          },
-         MovingRandomly{}
+         MovingRandomly{},
+         Health{current: hp, max: hp},
+            // slightly different tuple construct
+         Name(name)
         )
             //End: spawn_monster
     );
+}
+
+fn goblin() -> (i32, String, FontCharType) {
+    // number is the hp count
+    (1, "Goblin".to_string(), to_cp437('g'))
+}
+
+fn orc() -> (i32, String, FontCharType) {
+    (2, "Orc".to_string(), to_cp437('o'))
 }

@@ -30,3 +30,7 @@ pub struct WantsToMove {
     pub entity : Entity,
     pub destination : Point
 }
+
+// structs can also be tuples
+#[derive(Clone, PartialEq)]
+pub struct Name(pub String);

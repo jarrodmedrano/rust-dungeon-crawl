@@ -78,6 +78,9 @@ impl GameState for State {
         ctx.cls();
         // makes keyboard available6
         self.resources.insert(ctx.key);
+            ctx.set_active_console(0);
+        // convert mouse position toa  Point
+        self.resources.insert(Point::from_tuple(ctx.mouse_pos()));
         //START: dispatch
         let current_state = self.resources.get::<TurnState>().unwrap().clone();
         match current_state {

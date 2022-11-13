@@ -34,3 +34,9 @@ pub struct WantsToMove {
 // structs can also be tuples
 #[derive(Clone, PartialEq)]
 pub struct Name(pub String);
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct WantsToAttack {
+    pub attacker : Entity,
+    pub target : Entity
+}

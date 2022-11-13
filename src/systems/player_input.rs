@@ -13,9 +13,9 @@ pub fn player_input(
     #[resource] turn_state: &mut TurnState
 )
 {
-    let mut players = <(Entity, &Point)>::query()
-        .filter(component::<Player>());
-    if let Some(key) = key {
+    // player entity and destination are destructured from the iterator results
+    let mut players = <(Entity, &Point)>::query().filter(component::<Player>());
+    if let Some(key) = *key {
         let delta = match key {
             VirtualKeyCode::Left => Point::new(-1, 0),
             VirtualKeyCode::Right => Point::new(1, 0),
@@ -24,13 +24,49 @@ pub fn player_input(
             _ => Point::new(0, 0),
         };
 
-            // adding filter before the iterator limits types included in query
-            players.iter(ecs).for_each(| (entity, pos) | {
-                let destination = *pos + delta;
-                // adding new entity in commands buffer is the same as pushing
+        //START: get_player_dest
+        let (player_entity, destination) = players
+            .iter(ecs)
+            // transforms iterator data into other iterator data
+            // stops first time we return Some data
+            .find_map(|(entity, pos)| Some((*entity, *pos + delta)) )
+            // retrieves our tuple from the iterator chain and stores it in player_entity and destination
+            .unwrap();
+        //END: get_player_dest
+
+        //START: find_enemies
+        let mut enemies = <(Entity, &Point)>::query().filter(component::<Enemy>());
+        if delta.x !=0 || delta.y != 0 {
+            let mut hit_something = false;
+            enemies
+                .iter(ecs)
+                .filter(|(_, pos)| {
+                    **pos == destination
+                })  // if any matched, it will skip this step
+                //END: find_enemies
+                //START: for_each
+                .for_each(|(entity, _) | {
+                    //if loop executes we know we are targeting enemy and standing in destination tile
+                    hit_something = true;
+                    commands
+                        // send wants to attack message ot legion command
+                        .push(((), WantsToAttack{
+                            attacker: player_entity,
+                            target : *entity,
+                        }));
+                });
+            //END: for_each
+
+            //START: hit_something
+            if !hit_something {
                 commands
-                    .push(((), WantsToMove{ entity: *entity, destination }));
-            });
-            *turn_state = TurnState::PlayerTurn;
+                    .push(((), WantsToMove{
+                        entity: player_entity,
+                        destination
+                    }));
+            }
+        }
+        *turn_state = TurnState::PlayerTurn;
+        //END: hit_something
         }
 }

@@ -49,7 +49,7 @@ pub fn spawn_monster(
 
 fn goblin() -> (i32, String, FontCharType) {
     // number is the hp count
-    (1, "Goblin".to_string(), to_cp437('g'))
+    (5, "Goblin".to_string(), to_cp437('g'))
 }
 
 fn orc() -> (i32, String, FontCharType) {

@@ -4,6 +4,8 @@ use crate::prelude::*;
 #[system]
 #[read_component(Point)]
 #[read_component(Player)]
+#[read_component(Enemy)]
+#[write_component(Health)]
 pub fn player_input(
     // like a world but can only see components we request
     ecs: &mut SubWorld,
@@ -16,6 +18,7 @@ pub fn player_input(
     // player entity and destination are destructured from the iterator results
     let mut players = <(Entity, &Point)>::query().filter(component::<Player>());
     if let Some(key) = *key {
+
         let delta = match key {
             VirtualKeyCode::Left => Point::new(-1, 0),
             VirtualKeyCode::Right => Point::new(1, 0),
@@ -36,6 +39,7 @@ pub fn player_input(
 
         //START: find_enemies
         let mut enemies = <(Entity, &Point)>::query().filter(component::<Enemy>());
+        let mut did_something = false;
         if delta.x !=0 || delta.y != 0 {
             let mut hit_something = false;
             enemies
@@ -48,6 +52,7 @@ pub fn player_input(
                 .for_each(|(entity, _) | {
                     //if loop executes we know we are targeting enemy and standing in destination tile
                     hit_something = true;
+                    did_something = true;
                     commands
                         // send wants to attack message ot legion command
                         .push(((), WantsToAttack{
@@ -59,13 +64,27 @@ pub fn player_input(
 
             //START: hit_something
             if !hit_something {
+                did_something = true;
                 commands
                     .push(((), WantsToMove{
                         entity: player_entity,
                         destination
                     }));
             }
+            // grant health back if player rests
+            if !did_something {
+                if let Ok(mut health) = ecs
+                    .entry_mut(player_entity)
+                    .unwrap()
+                    .get_component_mut::<Health>()
+                {
+                    // add health back
+                    health.current = i32::min(health.max, health.current+1);
+                    println!("Health after healing: {}", health.current);
+                }
+            }
         }
+
         *turn_state = TurnState::PlayerTurn;
         //END: hit_something
         }

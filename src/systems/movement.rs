@@ -12,7 +12,7 @@ pub fn movement(
 ) {
     if map.can_enter_tile(want_move.destination) {
         // uses command to add component batches updates and performed at once
-        commands.add_component(want_move.entity, want_move.destination);
+        commands.add_component(want_move.entity, want_move.destination);// <callout id="co.tbs.intent.commands" />
         // adding component that already exists replaces the old one
         if ecs.entry_ref(want_move.entity)
             .unwrap()
@@ -21,7 +21,8 @@ pub fn movement(
             .get_component::<Player>().is_ok()
         {
             // update player's camera information
-            camera.on_player_move(want_move.destination)
+            camera.on_player_move(want_move.destination);// <callout id="co.tbs.intent.on_player_move" />
         }
     }
+    commands.remove(*entity);// <callout id="co.tbs.intent.cmdremove" />
 }

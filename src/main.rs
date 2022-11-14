@@ -1,54 +1,104 @@
 #![warn(clippy::pedantic)]
 
+mod components;
+mod spawner;
 mod map;
 mod map_builder;
-mod player;
+mod systems;
 mod camera;
+mod turn_state;
 
 mod prelude {
     pub use bracket_lib::prelude::*;
+    pub use legion::*;
+    pub use legion::world::SubWorld;
+    pub use legion::systems::CommandBuffer;
     pub const SCREEN_WIDTH: i32 = 80;
     pub const SCREEN_HEIGHT: i32 = 50;
     pub const DISPLAY_WIDTH: i32 = SCREEN_WIDTH / 2;
     pub const DISPLAY_HEIGHT: i32 = SCREEN_HEIGHT / 2;
+    pub use crate::components::*;
+    pub use crate::spawner::*;
     pub use crate::map::*;
-    pub use legion::*;
-    pub use legion::world::SubWorld;
-    pub use legion::systems::CommandBuffer;
-    pub use crate::player::*;
+    pub use crate::systems::*;
     pub use crate::map_builder::*;
     pub use crate::camera::*;
+    pub use crate::turn_state::*;
 }
 
 use prelude::*;
 
+
 struct State {
-    map: Map,
-    player: Player,
-    camera: Camera
+    ecs : World,
+    resources: Resources,
+    input_systems: Schedule,
+    player_systems: Schedule,
+    monster_systems: Schedule
 }
 
 impl State {
     fn new() -> Self {
+        let mut ecs = World::default();
+        let mut resources = Resources::default();
         let mut rng = RandomNumberGenerator::new();
         let map_builder = MapBuilder::new(&mut rng);
+        // skip player's first room when adding a monster
+        map_builder.rooms
+            .iter()
+            .skip(1)
+            // mapping an iterator passes each entry into a closure (returning a different type of result)
+            // transforms one type of iterator into another
+            .map(|r| r.center())
+            // closure on each location
+            .for_each(|pos| spawn_monster(&mut ecs, &mut rng, pos));
+        // add player and its components to ECS
+        spawn_player(&mut ecs, map_builder.player_start);
+        resources.insert(map_builder.map);
+        resources.insert(Camera::new(map_builder.player_start));
+        resources.insert(TurnState:: AwaitingInput);
         Self {
-            map : map_builder.map,
-            player: Player::new(map_builder.player_start),
-            camera: Camera::new(map_builder.player_start)
+            ecs,
+            resources,
+            input_systems: build_input_scheduler(),
+            player_systems: build_player_scheduler(),
+            monster_systems: build_monster_scheduler()
         }
     }
 }
 
 impl GameState for State {
     fn tick(&mut self, ctx: &mut BTerm) {
+        // setting layers of the console
         ctx.set_active_console(0);
         ctx.cls();
         ctx.set_active_console(1);
         ctx.cls();
-        self.player.update(ctx, &self.map, &mut self.camera);
-        self.map.render(ctx, &self.camera);
-        self.player.render(ctx, &self.camera);
+        ctx.set_active_console(2);
+        ctx.cls();
+        // makes keyboard available6
+        self.resources.insert(ctx.key);
+            ctx.set_active_console(0);
+        // convert mouse position toa  Point
+        self.resources.insert(Point::from_tuple(ctx.mouse_pos()));
+        //START: dispatch
+        let current_state = self.resources.get::<TurnState>().unwrap().clone();
+        match current_state {
+            TurnState::AwaitingInput => self.input_systems.execute(
+                &mut self.ecs,
+                &mut self.resources
+            ),
+            TurnState::PlayerTurn => {
+                self.player_systems.execute(&mut self.ecs, &mut self.resources);
+            }
+            TurnState::MonsterTurn => {
+                self.monster_systems.execute(&mut self.ecs, &mut self.resources)
+            }
+        }
+        render_draw_buffer(ctx).expect("Render error");
+        //END: dispatch
+        // self.systems.execute(&mut self.ecs,&mut self.resources);
+        render_draw_buffer(ctx).expect("Render error");
     }
 }
 
@@ -60,9 +110,11 @@ fn main() -> BError {
         .with_tile_dimensions(32, 32)
         .with_resource_path("resources/")
         .with_font("dungeonfont.png", 32, 32)
+        .with_font("terminal8x8.png", 8, 8)
         .with_simple_console(DISPLAY_WIDTH, DISPLAY_HEIGHT, "dungeonfont.png")
         .with_simple_console_no_bg(DISPLAY_WIDTH, DISPLAY_HEIGHT,
                                    "dungeonfont.png")
+        .with_simple_console_no_bg(SCREEN_WIDTH*2, SCREEN_HEIGHT*2, "terminal8x8.png")
         .build()?;
 
 
